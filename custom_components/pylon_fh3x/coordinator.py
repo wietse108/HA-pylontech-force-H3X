@@ -199,7 +199,24 @@ class PylontechCoordinator(DataUpdateCoordinator):
             if r_hp:
                 data["heat_pump"] = get_16bit_uint(r_hp, 0)
 
-            
+            # charge / discharge periods
+            r_p1 = await self.safe_read(40908, 1, 2)
+            if r_p1:
+                data["period_1"] = get_16bit_uint(r_p1, 0)
+
+            r_p2 = await self.safe_read(40914, 1, 2)
+            if r_p2:
+                data["period_2"] = get_16bit_uint(r_p2, 0)
+
+            r_p3 = await self.safe_read(40920, 1, 2)
+            if r_p3:
+                data["period_3"] = get_16bit_uint(r_p3, 0)
+
+            r_p4 = await self.safe_read(40926, 1, 2)
+            if r_p4:
+                data["period_4"] = get_16bit_uint(r_p4, 0)
+                
+                            
             # =========================================================
             # SLAVE 1 (BMS) 
             # =========================================================

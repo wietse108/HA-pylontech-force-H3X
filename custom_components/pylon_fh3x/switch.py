@@ -24,6 +24,34 @@ SWITCH_TYPES: tuple[PylontechSwitchEntityDescription, ...] = (
         register_address=40848,
         slave_id=2,
     ),
+    PylontechSwitchEntityDescription(
+        key="period_1",
+        name="Period 1",
+        icon="mdi:calendar-clock",
+        register_address=40908,
+        slave_id=2,
+    ),
+    PylontechSwitchEntityDescription(
+        key="period_2",
+        name="Period 2",
+        icon="mdi:calendar-clock",
+        register_address=40914,
+        slave_id=2,
+    ),
+    PylontechSwitchEntityDescription(
+        key="period_3",
+        name="Period 3",
+        icon="mdi:calendar-clock",
+        register_address=40920,
+        slave_id=2,
+    ),
+    PylontechSwitchEntityDescription(
+        key="period_4",
+        name="Period 4",
+        icon="mdi:calendar-clock",
+        register_address=40926,
+        slave_id=2,
+    ),
 )
 
 
