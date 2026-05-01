@@ -8,5 +8,5 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/wietse108/HA-pylontech-force-H3X/issues",
   "requirements": ["pymodbus>=3.11.2"],
-  "version": "1.1.2"
+  "version": "1.1.3"
 }

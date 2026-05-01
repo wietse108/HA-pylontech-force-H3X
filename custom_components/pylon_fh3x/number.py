@@ -20,6 +20,7 @@ class PylontechNumberEntityDescription(NumberEntityDescription):
     register_address: int = 0
     slave_id: int = 2
     scale: float = 1.0 
+    is_32bit: bool = False
 
 
 NUMBER_TYPES: tuple[PylontechNumberEntityDescription, ...] = (
@@ -59,6 +60,20 @@ NUMBER_TYPES: tuple[PylontechNumberEntityDescription, ...] = (
         native_max_value=100,
         native_step=1,
         mode=NumberMode.SLIDER,
+    ),
+    PylontechNumberEntityDescription(
+        key="meter_export_power_max",
+        name="Meter max Power (Export)",
+        icon="mdi:transmission-tower-export",
+        native_unit_of_measurement="W",
+        device_class=None,
+
+        native_min_value=-20000,
+        native_max_value=-1,
+        native_step=100,
+        register_address=40401,
+        is_32bit=True, # Zorg dat je number.py 32-bit ondersteunt!
+        slave_id=2,
     ),
 )
 
@@ -117,11 +132,20 @@ class PylontechNumber(CoordinatorEntity, NumberEntity):
         # Draai de schaling om voor de Modbus verzending (bijv -50.0 / 0.1 = -500)
         raw_value = int(round(value / self.entity_description.scale))
         
-        success = await self.coordinator.async_write_register(
-            address=self.entity_description.register_address,
-            value=raw_value,
-            slave=self.entity_description.slave_id
-        )
+
+        if getattr(self.entity_description, "is_32bit", False):
+            success = await self.coordinator.async_write_register_32bit(
+                address=self.entity_description.register_address,
+                value=raw_value,
+                slave=self.entity_description.slave_id
+            )
+        else:
+            success = await self.coordinator.async_write_register(
+                address=self.entity_description.register_address,
+                value=raw_value,
+                slave=self.entity_description.slave_id
+            )
+
         
         if success:
             self.coordinator.data[self.entity_description.key] = raw_value

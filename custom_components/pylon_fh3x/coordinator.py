@@ -75,9 +75,6 @@ class PylontechCoordinator(DataUpdateCoordinator):
 
             data = {}
 
-            # =========================================================
-            # SLAVE 2 (inverter) - 
-            # =========================================================
             
             # AC & Grid Power (30100 - 30101 en 30108 - 30109)
             r_ac = await self.safe_read(30100, 2, 2)
@@ -138,6 +135,14 @@ class PylontechCoordinator(DataUpdateCoordinator):
             if r_grid_e:
                 data["total_grid_import"] = get_32bit_float(r_grid_e, 0)
                 data["total_grid_export"] = get_32bit_float(r_grid_e, 2)
+
+
+            r_active = await self.safe_read(40400, 3, 2)
+            if r_active:
+                # 40400: Active power control mode (U16)
+                data["active_power_control_mode"] = get_16bit_uint(r_active, 0)
+                # 40401: Meter limit power (S32, 2 registers)
+                data["meter_export_power_max"] = get_32bit_int(r_active, 1)
 
 
             BATTERY_STATUS_MAP = {
@@ -215,8 +220,8 @@ class PylontechCoordinator(DataUpdateCoordinator):
             r_p4 = await self.safe_read(40926, 1, 2)
             if r_p4:
                 data["period_4"] = get_16bit_uint(r_p4, 0)
-                
-                            
+
+
             # =========================================================
             # SLAVE 1 (BMS) 
             # =========================================================
