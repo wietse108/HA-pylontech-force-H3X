@@ -27,6 +27,7 @@ This integration pulls comprehensive data from both the Inverter and the interna
 * **EMS Mode Selector:** Switch between modes like `Self-Consumption`, `Back up mode`, and `User mode`.
 * **Charge/Discharge Power Ref:** Set the exact percentage (-100% to 100%) for battery charging or discharging.
 * **SOC Limits:** Sliders for setting the `Charge Limit SOC` and `Discharge Limit SOC (EPS)`.
+* **Period Schedules:** Turn your pre-programmed Charging Schedules ON/OFF
 
 **📡 Read-Only Sensors:**
 * **🌞 Solar (PV):** Voltage, Current, and Power for PV1, PV2, and PV3, plus Total PV Energy.
@@ -43,6 +44,37 @@ If you want to use the **Charge/Discharge Power Ref** setting to manually force 
 If the system is set to any other mode (like `Self-Consumption`), the inverter's internal logic will override your command and revert the setting back to its default value!
 
 After the writing new settings, not all of the entities show the right value. I'm still working on that
+
+---
+## 📅 EMS Charge/Discharge Schedules (with v1.1.4)
+
+If you have configured Charge/Discharge period schedules (up to 4 of them) in the Pylontech app, you can now enable or disable those schedules directly from Home Assistant.
+
+⚠️ This integration can currently only toggle schedules on/off — it cannot view or edit the schedule contents (times, days, power settings).
+
+### 📱 Where to configure schedules
+
+Schedules must be configured in the Pylontech app:
+
+* Device → Setting → Energy Management → Charge/Discharge Time Control
+
+Configure each period as needed (time of day, days of week, etc), click Save, then use Home Assistant to activate or deactivate them.
+
+### ⚙️ How it works
+Each schedule appears in Home Assistant as below, and can be turned ON or OFF as required
+* switch.pylontech_force_h3x_period_1
+* switch.pylontech_force_h3x_period_2
+* switch.pylontech_force_h3x_period_3
+* switch.pylontech_force_h3x_period_4
+
+### ⚠️ Important Note - No overlap allowed
+Active schedules timings must not overlap. Overlapping periods may fail to activate or behave unpredictably.
+Recommended approach
+Use clean boundaries between periods. For example:
+* Period 1: 07:00 → 10:59
+* Period 2: 11:00 → 16:59
+
+App remains the source of truth, and all schedule details must be configured in the app first.
 
 ---
 
