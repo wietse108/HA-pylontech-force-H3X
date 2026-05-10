@@ -264,6 +264,9 @@ class PylontechCoordinator(DataUpdateCoordinator):
             if not self.client.connected:
                 await self.client.connect()
 
+            if value < 0:
+                value = value & 0xFFFF
+
             # Pymodbus write_register function 
             
             try:
