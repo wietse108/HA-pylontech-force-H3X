@@ -33,9 +33,9 @@ NUMBER_TYPES: tuple[PylontechNumberEntityDescription, ...] = (
         slave_id=2,
         native_min_value=-100.0, # -100% (max charge)
         native_max_value=100.0,  # +100% (max discharge)
-        native_step=0.1,
+        native_step=1,
         scale=0.1, # Modbus 1000 * 0.1 = 100.0%
-        mode=NumberMode.BOX, # BOX is better than slider
+        mode=NumberMode.BOX, 
     ),
     PylontechNumberEntityDescription(
         key="charge_limit_soc",
@@ -129,7 +129,6 @@ class PylontechNumber(CoordinatorEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         """Dit wordt aangeroepen als je in Home Assistant de waarde aanpast."""
-        # Draai de schaling om voor de Modbus verzending (bijv -50.0 / 0.1 = -500)
         raw_value = int(round(value / self.entity_description.scale))
         
 

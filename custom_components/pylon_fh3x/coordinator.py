@@ -203,6 +203,7 @@ class PylontechCoordinator(DataUpdateCoordinator):
             r_hp = await self.safe_read(40848, 1, 2)
             if r_hp:
                 data["heat_pump"] = get_16bit_uint(r_hp, 0)
+                
 
             # charge / discharge periods
             r_p1 = await self.safe_read(40908, 1, 2)
@@ -247,6 +248,9 @@ class PylontechCoordinator(DataUpdateCoordinator):
             r_bms_soh = await self.safe_read(5152, 1, 1)
             if r_bms_soh: data["bms_soh"] = get_16bit_uint(r_bms_soh, 0)
 
+
+
+
             
             if not data:
                 raise UpdateFailed("No data received out of inverter.")
@@ -282,7 +286,6 @@ class PylontechCoordinator(DataUpdateCoordinator):
                 return False
 
             
-
             await self.async_request_refresh()
             return True
 
