@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DOMAIN, DEFAULT_SCAN_INTERVAL
+from .validation import TelemetryValidator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -60,6 +61,7 @@ class PylontechCoordinator(DataUpdateCoordinator):
     def __init__(self, hass: HomeAssistant, host: str, port: int) -> None:
         self.client = AsyncModbusTcpClient(host=host, port=port, timeout=5)
         self.host = host
+        self._validator = TelemetryValidator()
         
         super().__init__(
             hass,
@@ -73,10 +75,21 @@ class PylontechCoordinator(DataUpdateCoordinator):
         # Space requests to avoid overwhelming the inverter's Modbus interface.
         await asyncio.sleep(0.1) 
         res = await _modbus_read(self.client, address, count, slave)
-        if res.isError():
+        if res is None or res.isError():
             _LOGGER.warning("error while reading adress %s (Slave %s): %s", address, slave, res)
             return None
-        return res.registers
+        registers = getattr(res, "registers", None)
+        if (
+            not isinstance(registers, (list, tuple))
+            or len(registers) != count
+            or any(type(word) is not int or not 0 <= word <= 0xFFFF for word in registers)
+        ):
+            _LOGGER.warning(
+                "Ignoring malformed Modbus response at address %s (Slave %s): expected %s uint16 registers",
+                address, slave, count,
+            )
+            return None
+        return registers
 
     async def _async_update_data(self):
         """Fetch data from the inverter via Modbus."""
@@ -91,9 +104,6 @@ class PylontechCoordinator(DataUpdateCoordinator):
             if r_inverter_main:
                 data["ac_total_power"] = get_32bit_int(r_inverter_main, 0)
                 data["grid_total_power"] = get_32bit_int(r_inverter_main, 8)
-                data["load_power"] = (
-                    data["ac_total_power"] + data["grid_total_power"]
-                )
                 data["inverter_status"] = get_16bit_uint(r_inverter_main, 15)
 
                 data["pv1_voltage"] = get_16bit_uint(r_inverter_main, 19) * 0.1
@@ -102,9 +112,6 @@ class PylontechCoordinator(DataUpdateCoordinator):
                 data["pv2_current"] = get_16bit_uint(r_inverter_main, 22) * 0.1
                 data["pv3_voltage"] = get_16bit_uint(r_inverter_main, 23) * 0.1
                 data["pv3_current"] = get_16bit_uint(r_inverter_main, 24) * 0.1
-                data["pv1_power"] = data["pv1_voltage"] * data["pv1_current"]
-                data["pv2_power"] = data["pv2_voltage"] * data["pv2_current"]
-                data["pv3_power"] = data["pv3_voltage"] * data["pv3_current"]
 
                 data["pv_total_power"] = get_32bit_int(r_inverter_main, 27)
                 data["pv_total_energy"] = get_32bit_float(r_inverter_main, 29)
@@ -114,10 +121,6 @@ class PylontechCoordinator(DataUpdateCoordinator):
                 data["ac_current_s"] = get_16bit_uint(r_inverter_main, 34) * 0.1
                 data["grid_voltage_t"] = get_16bit_uint(r_inverter_main, 35) * 0.1
                 data["ac_current_t"] = get_16bit_uint(r_inverter_main, 36) * 0.1
-                # Inverter output power per phase, used to derive per-phase load power.
-                data["ac_power_r"] = data["grid_voltage_r"] * data["ac_current_r"]
-                data["ac_power_s"] = data["grid_voltage_s"] * data["ac_current_s"]
-                data["ac_power_t"] = data["grid_voltage_t"] * data["ac_current_t"]
                 data["ac_frequency"] = get_16bit_uint(r_inverter_main, 40) * 0.01
                 data["inverter_temperature"] = get_16bit_int(r_inverter_main, 46) * 0.1
                 data["heatsink_temperature"] = get_16bit_int(r_inverter_main, 47) * 0.1
@@ -131,12 +134,6 @@ class PylontechCoordinator(DataUpdateCoordinator):
                 data["grid_power_r"] = get_32bit_int(r_grid_phases, 3)
                 data["grid_power_s"] = get_32bit_int(r_grid_phases, 5)
                 data["grid_power_t"] = get_32bit_int(r_grid_phases, 7)
-
-                # Load power per phase = inverter output per phase + grid import/export per phase.
-                if "ac_power_r" in data:
-                    data["load_power_r"] = data["ac_power_r"] + data["grid_power_r"]
-                    data["load_power_s"] = data["ac_power_s"] + data["grid_power_s"]
-                    data["load_power_t"] = data["ac_power_t"] + data["grid_power_t"]
 
             r_inverter_battery = await self.safe_read(30156, 30, 2)
             if r_inverter_battery:
@@ -185,11 +182,15 @@ class PylontechCoordinator(DataUpdateCoordinator):
                 data["bms_cell_voltage_min"] = get_16bit_uint(r_bms, 14) * 0.001
                 data["bms_soh"] = get_16bit_uint(r_bms, 29)
 
+            # Validate before exposing values or deriving any power sensors.
+            data = self._validator.validate(data)
             if not data:
                 raise UpdateFailed("No data received out of inverter.")
 
             return data
 
+        except UpdateFailed:
+            raise
         except ModbusException as err:
             raise UpdateFailed(f"error with modbus communication: {err}")
         except Exception as err:
