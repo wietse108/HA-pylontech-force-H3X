@@ -68,9 +68,14 @@ updates. The cycle counter allows 100 cycles per day plus a one-cycle margin.
 These are corruption checks, not estimates of expected consumption or cycle life.
 
 An impossible increase is rejected even if it repeats, and does not replace the
-last accepted baseline. A decrease needs a second consistent sample before it is
-accepted as a counter reset. A single low reading therefore does not create a
-false reset in Home Assistant. Missing or out-of-range counter samples clear a
+last accepted baseline. A decrease of 10% or less is rejected, even if it repeats,
+until the counter reaches its last accepted value again. This includes small
+backward steps such as 2025.52001953125 to 2025.50854492188 kWh.
+A decrease of more than 10% needs a second consistent sample before it is accepted
+as a counter reset. This matches the reset boundary in
+[Home Assistant Recorder](https://github.com/home-assistant/core/blob/2026.9.0/homeassistant/components/sensor/recorder.py#L442).
+A single low reading therefore does not create a false reset in Home Assistant.
+Missing or out-of-range counter samples clear a
 pending confirmation. Baselines are held in memory and confirmed again after an
 integration restart.
 
@@ -97,3 +102,6 @@ Tests feed simulated register replies through the actual coordinator, including
 700,000,000 W spikes, signed integer extremes, invalid floats, malformed replies,
 derived sensors, counter spikes/resets and recovery. Home Assistant and transport
 imports are stubbed; no physical battery or running Home Assistant is required.
+Sensor platform import tests also check the separation between `UnitOfPower` and
+`UnitOfApparentPower`. VA sensors must use `UnitOfApparentPower.VOLT_AMPERE`;
+using `UnitOfPower.VOLT_AMPERE` prevents the sensor platform from loading.

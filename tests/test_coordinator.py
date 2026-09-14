@@ -317,6 +317,26 @@ class CoordinatorTests(unittest.IsolatedAsyncioTestCase):
         await self.poll()
         self.assertEqual(validation_module._LOGGER.warning.call_count, 2)
 
+    async def test_exact_negative_energy_values_from_reported_logs(self):
+        for address, offset, key, value in (
+            (30156, 0, "total_grid_import", -1.46215599273087e37),
+            (30100, 29, "pv_total_energy", -4.92869640932547e-31),
+            (30156, 18, "total_battery_charge", -5.1825399857844e-17),
+        ):
+            with self.subTest(key=key):
+                put_float(self.blocks[address], offset, value)
+                self.assertIsNone((await self.poll()).get(key))
+
+    async def test_reported_small_counter_decrease_is_never_treated_as_reset(self):
+        put_float(self.blocks[30156], 0, 2025.52001953125)
+        await self.poll()
+        await self.poll()
+        for value in (2025.50854492188, 2025.50854492188, 2025.515):
+            put_float(self.blocks[30156], 0, value)
+            self.assertIsNone((await self.poll()).get("total_grid_import"))
+        put_float(self.blocks[30156], 0, 2025.53)
+        self.assertAlmostEqual((await self.poll())["total_grid_import"], 2025.53, places=3)
+
 
 if __name__ == "__main__":
     unittest.main()

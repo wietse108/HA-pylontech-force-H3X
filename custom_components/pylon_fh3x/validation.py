@@ -13,6 +13,9 @@ INVERTER_POWER_LIMIT = 30_000
 PV_POWER_LIMIT = 40_000
 # The CT measures the whole installation, not just the inverter output.
 GRID_POWER_LIMIT = 1_000_000
+# Match HA Recorder's reset boundary for TOTAL_INCREASING. Smaller dips
+# must never be published as resets, even when the same bad read repeats.
+COUNTER_RESET_RATIO = 0.9
 
 VALUE_RANGES = {
     "ac_total_power": (-INVERTER_POWER_LIMIT, INVERTER_POWER_LIMIT),
@@ -85,9 +88,9 @@ class TelemetryValidator:
                 self._counters[key] = (value, now)
                 self._pending_counters.pop(key, None)
                 return True
-            # An impossible increase must never become a new baseline just
-            # because the corrupt value repeats. Only decreases can be resets.
-            if value >= last_value:
+            # Reject impossible increases and small dips even when repeated.
+            # Only a drop of more than 10% can be a reset candidate.
+            if value >= COUNTER_RESET_RATIO * last_value:
                 self._pending_counters.pop(key, None)
                 return False
 
