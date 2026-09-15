@@ -18,6 +18,7 @@ Say goodbye to complex, manual Modbus YAML configurations! This integration conn
 - **Auto-Discovery:** Automatically creates and groups all sensors and controls under a single Device in your dashboard.
 - **Energy Dashboard Ready:** All energy/power sensors are configured with the correct `state_class` and `device_class` to work out-of-the-box with the Home Assistant Energy Dashboard.
 - **Resilient Connection:** Built-in auto-reconnect and error handling.
+- **Measurement validation:** Rejects malformed reads and implausible telemetry before sending values to Home Assistant. Derived power uses validated inputs; energy counters are checked for impossible jumps. See [validation behaviour and limits](docs/telemetry-validation.md).
 
 ## 📊 Included Sensors & Controls
 
