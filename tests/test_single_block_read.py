@@ -20,6 +20,7 @@ def memory_map(blocks):
 class SingleBlockTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.coordinator = coordinator_module.PylontechCoordinator(None, "test", 502)
+        self.coordinator.use_single_block_read = True  # opt in; off by default
         self.blocks = valid_blocks()
         self.fail_big = False
         self.calls = []
@@ -47,6 +48,10 @@ class SingleBlockTests(unittest.IsolatedAsyncioTestCase):
         data = await self.coordinator._async_update_data()
         self.coordinator.data = data
         return data
+
+    def test_combined_read_off_by_default(self):
+        fresh = coordinator_module.PylontechCoordinator(None, "test", 502)
+        self.assertFalse(fresh.use_single_block_read)
 
     async def test_one_request_replaces_three(self):
         await self.poll()

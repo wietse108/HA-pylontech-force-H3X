@@ -6,9 +6,9 @@
   ],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/wietse108/HA-pylontech-force-H3X",
+  "documentation": "https://github.com/hbvdh/HA-pylontech-force-H3X",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/wietse108/HA-pylontech-force-H3X/issues",
+  "issue_tracker": "https://github.com/hbvdh/HA-pylontech-force-H3X/issues",
   "requirements": [
     "pymodbus>=3.11.2"
   ],

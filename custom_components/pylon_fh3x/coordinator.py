@@ -42,14 +42,6 @@ POLL_MAX_FAILED_READS = 3
 BACKOFF_AFTER_BAD_POLLS = 3
 BACKOFF_INTERVAL_S = 60
 
-# When the dongle stops answering, hammering it with reconnects does not help.
-# A poll in which this many reads failed (each already retried once) counts as
-# a bad poll; the rest of that poll is skipped, and after several bad polls in a
-# row the poll interval is lengthened until the dongle answers again.
-POLL_MAX_FAILED_READS = 3
-BACKOFF_AFTER_BAD_POLLS = 3
-BACKOFF_INTERVAL_S = 60
-
 _GRID_PHASE_KEYS = (
     "grid_current_r", "grid_current_s", "grid_current_t",
     "grid_power_r", "grid_power_s", "grid_power_t",
@@ -157,7 +149,9 @@ class PylontechCoordinator(DataUpdateCoordinator):
         self._modbus_lock = asyncio.Lock()
         self._last_modbus_slave = None
         self._last_valid_grid_currents = {}
-        self.use_single_block_read = True
+        # Off by default: the combined read caused errors on a live system.
+        # The code path stays available for testing (set to True to enable).
+        self.use_single_block_read = False
         self._single_block_failures = 0
         self._bad_polls = 0
         self._failed_reads_this_poll = 0
